@@ -1,0 +1,110 @@
+name: Bug report
+description: Report something that doesn't work as the documentation describes.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Before you start, check [Troubleshooting](https://github.com/HGWingless/obsidian-remote-mcp/blob/main/docs/troubleshooting.md). Many setup problems have a known fix.
+
+        To report a security problem, don't open an issue. See the [security policy](https://github.com/HGWingless/obsidian-remote-mcp/blob/main/SECURITY.md) instead.
+
+  - type: checkboxes
+    id: secrets
+    attributes:
+      label: Remove secrets first
+      description: Issues are public. A leaked secret can give someone access to your whole vault.
+      options:
+        - label: I removed my tunnel token, Access tokens and JWTs, my Obsidian login token, my vault encryption password, and my hostname (if I want it private) from everything I paste below.
+          required: true
+
+  - type: dropdown
+    id: setup
+    attributes:
+      label: Setup
+      description: Which setup do you use? See "Choose a setup" in the README.
+      options:
+        - Local folder (standalone vault)
+        - Obsidian Sync
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Host platform
+      description: Where do the containers run?
+      options:
+        - Linux
+        - macOS
+        - Windows (Docker Desktop with WSL 2)
+        - Cloud server (for example, a DigitalOcean Droplet)
+        - Synology
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: client
+    attributes:
+      label: MCP client
+      description: The app that connects to the server.
+      placeholder: For example, claude.ai, Claude Desktop, or Claude Code
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The commit or tag you use. To find the commit, run `git rev-parse --short HEAD`. If you changed any versions in `.env`, list them too.
+      placeholder: For example, a0f90cf, with MCPVAULT_VERSION=0.18.3
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: Describe the problem. Include any error message that you saw.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: Describe what you expected to happen instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the steps that make the problem happen.
+      placeholder: |
+        1. Run `docker compose up -d`.
+        2. In Claude, ask to read a note.
+        3. See the error.
+    validations:
+      required: true
+
+  - type: markdown
+    attributes:
+      value: |
+        **Before you paste output or logs:** remove your tunnel token, any Access tokens or JWTs (long strings that start with `eyJ`), your Obsidian login token, your vault encryption password, and your hostname if you want to keep it private. Anyone who has these can reach your whole vault.
+
+  - type: textarea
+    id: check-output
+    attributes:
+      label: Output of scripts/check.sh
+      description: Run `scripts/check.sh https://YOUR-HOSTNAME` and paste the output.
+      render: shell
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant container logs
+      description: For example, run `docker compose logs --tail 100 vault-mcp`. Use `cloudflared` or `ob-sync` in place of `vault-mcp` for the other containers.
+      render: shell

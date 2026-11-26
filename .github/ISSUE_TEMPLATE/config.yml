@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup help
+    url: https://github.com/HGWingless/obsidian-remote-mcp/blob/main/docs/troubleshooting.md
+    about: Check Troubleshooting for known setup problems and their fixes.
+  - name: Report a security problem
+    url: https://github.com/HGWingless/obsidian-remote-mcp/security/advisories/new
+    about: Report security problems privately. Don't open a public issue.
