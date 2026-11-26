@@ -1,0 +1,20 @@
+# Optional "Inbox-only" mode. The whole vault is mounted read-only into
+# vault-mcp, and one folder is mounted read-write on top of it, so the kernel
+# refuses writes anywhere else (EROFS), whatever the MCP client asks for.
+#
+#   docker compose -f compose.yaml -f compose.inbox-only.yaml up -d vault-mcp
+#
+# INBOX_DIR must already exist inside the vault. If that folder is deleted and
+# recreated (for example on another device, then synced back), recreate the
+# container: the bind mount follows the old directory.
+#   docker compose -f compose.yaml -f compose.inbox-only.yaml up -d --force-recreate vault-mcp
+services:
+  vault-mcp:
+    volumes:
+      - type: bind
+        source: ${VAULT_DIR:-./data/vault}
+        target: /vault
+        read_only: true
+      - type: bind
+        source: ${VAULT_DIR:-./data/vault}/${INBOX_DIR:-Inbox}
+        target: /vault/${INBOX_DIR:-Inbox}

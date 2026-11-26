@@ -1,0 +1,82 @@
+# obsidian-remote-mcp: serves an Obsidian vault folder as a remote MCP server,
+# through a Cloudflare Tunnel protected by Cloudflare Access.
+#
+# Two setups:
+#   - Local folder (default): VAULT_DIR points at a vault that already exists
+#     on this machine. Only vault-mcp and cloudflared run.
+#   - Obsidian Sync: set COMPOSE_PROFILES=obsidian-sync in .env. The ob-sync
+#     service keeps a copy of your vault in VAULT_DIR using Obsidian Sync.
+#
+# Copy .env.example to .env and fill it in before you run `docker compose up -d`.
+name: obsidian-remote-mcp
+
+services:
+  # Optional. Keeps a copy of the vault in step with Obsidian Sync.
+  # Runs only when COMPOSE_PROFILES includes obsidian-sync.
+  ob-sync:
+    profiles: [obsidian-sync]
+    build:
+      context: ./sync
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+        OBSIDIAN_HEADLESS_VERSION: ${OBSIDIAN_HEADLESS_VERSION:-0.0.14}
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    volumes:
+      - ${VAULT_DIR:-./data/vault}:/vault
+      - ${OB_HOME_DIR:-./data/ob-home}:/home/node
+    # Default bridge: reaches Obsidian Sync on the internet, but shares no
+    # network with vault-mcp or cloudflared.
+    network_mode: bridge
+
+  # MCPVault behind supergateway. No published ports; only cloudflared can
+  # reach it, over the private `mcp` network.
+  vault-mcp:
+    build:
+      context: ./mcp
+      args:
+        NODE_IMAGE: ${NODE_IMAGE:-node:22-bookworm-slim}
+        MCPVAULT_VERSION: ${MCPVAULT_VERSION:-0.18.3}
+        SUPERGATEWAY_VERSION: ${SUPERGATEWAY_VERSION:-4.2.1}
+    restart: unless-stopped
+    user: "${PUID:-1000}:${PGID:-1000}"
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /home/node
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      MCPVAULT_EXCLUDE: ${MCPVAULT_EXCLUDE:-}
+      MCPVAULT_READ_ONLY: ${MCPVAULT_READ_ONLY:-false}
+      SESSION_TIMEOUT_MS: ${SESSION_TIMEOUT_MS:-3600000}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    volumes:
+      - type: bind
+        source: ${VAULT_DIR:-./data/vault}
+        target: /vault
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8000/healthz').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    networks: [mcp]
+
+  # Outbound-only tunnel to Cloudflare. The tunnel's public hostname routes to
+  # http://vault-mcp:8000 (set in the Cloudflare dashboard).
+  cloudflared:
+    image: cloudflare/cloudflared:${CLOUDFLARED_VERSION:-2026.10.7}
+    restart: unless-stopped
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?Set TUNNEL_TOKEN in .env (Cloudflare Zero Trust > Networks > Tunnels)}
+    depends_on:
+      vault-mcp:
+        condition: service_healthy
+    networks: [mcp]
+
+networks:
+  mcp: {}
