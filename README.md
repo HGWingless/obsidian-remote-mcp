@@ -55,7 +55,76 @@ Both setups use the same Cloudflare steps and the same MCP server.
 - An MCP client that can connect to a remote server and sign in with OAuth, such as Claude. See [Compatible MCP clients](docs/clients.md).
 - For the Obsidian Sync setup only: an [Obsidian Sync](https://obsidian.md/sync) subscription.
 
-## Get started
+## Quick start
+
+These commands set up the server on Linux or macOS. For Windows, or for an explanation of each step, follow the [step-by-step guides](#step-by-step-guides) instead.
+
+Before you begin:
+
+- Install Docker with Docker Compose.
+- Do the dashboard steps in [Set up Cloudflare](docs/cloudflare.md). They happen in a web browser, so they can't be pasted here. When you finish, you have a tunnel token and a hostname, such as `vault-mcp.example.com`.
+
+1. Set your values. Replace the vault path and the hostname. The `read` command asks for your tunnel token, so that the token isn't saved in your shell history.
+
+   ```bash
+   VAULT_DIR="$HOME/Documents/MyVault"
+   MCP_HOST="vault-mcp.example.com"
+   read -rsp 'Tunnel token: ' TUNNEL_TOKEN; echo
+   ```
+
+   For the Obsidian Sync setup, use `VAULT_DIR="./data/vault"` instead.
+
+1. Download the project and write your settings:
+
+   ```bash
+   git clone https://github.com/HGWingless/obsidian-remote-mcp.git
+   cd obsidian-remote-mcp
+   cp .env.example .env && chmod 600 .env
+   sed -i.bak \
+     -e "s|^VAULT_DIR=.*|VAULT_DIR=$VAULT_DIR|" \
+     -e "s|^TUNNEL_TOKEN=.*|TUNNEL_TOKEN=$TUNNEL_TOKEN|" \
+     .env && rm .env.bak
+   mkdir -p "$VAULT_DIR" data/ob-home
+   ```
+
+1. On Linux only, run the containers as the owner of your vault folder. Skip this step on macOS.
+
+   ```bash
+   sed -i.bak \
+     -e "s|^PUID=.*|PUID=$(stat -c %u "$VAULT_DIR")|" \
+     -e "s|^PGID=.*|PGID=$(stat -c %g "$VAULT_DIR")|" \
+     .env && rm .env.bak
+   ```
+
+1. For the Obsidian Sync setup only, connect to Obsidian Sync. Replace `VAULT_NAME` with the name of your vault, as the list command shows it. `ob login` asks for your Obsidian email, password, and two-factor code. `ob sync-setup` asks for your encryption password if your vault uses end-to-end encryption.
+
+   ```bash
+   sed -i.bak "s|^COMPOSE_PROFILES=.*|COMPOSE_PROFILES=obsidian-sync|" .env && rm .env.bak
+   docker compose build
+   docker compose run --rm ob-sync ob login
+   docker compose run --rm ob-sync ob sync-list-remote
+   docker compose run --rm ob-sync ob sync-setup --vault "VAULT_NAME" --path /vault --device-name mcp-server
+   docker compose run --rm ob-sync ob sync-config --path /vault --mode pull-only --conflict-strategy merge --configs ""
+   docker compose run --rm ob-sync ob sync --path /vault
+   docker compose run --rm ob-sync ob sync-config --path /vault --mode bidirectional
+   ```
+
+   These commands download your vault once, and then turn on two-way sync. To sync notes only, without attachments, run `scripts/notes-only.sh` before the `ob sync` command.
+
+1. Start the server, and check it:
+
+   ```bash
+   docker compose up -d --build
+   scripts/check.sh "https://$MCP_HOST"
+   ```
+
+   The check shows that the MCP server is healthy and lists 18 tools, and that your public address returns `401` until you sign in.
+
+1. Connect your MCP client. See [Compatible MCP clients](docs/clients.md).
+
+The server starts again on its own after a reboot, as long as Docker starts with the machine. See [Start automatically](docs/operations.md#start-automatically).
+
+## Step-by-step guides
 
 1. [Set up the server](docs/setup.md).
 2. [Set up Cloudflare](docs/cloudflare.md).

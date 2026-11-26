@@ -18,11 +18,9 @@ This page shows you how to install obsidian-remote-mcp on the machine that runs 
 1. Download the repository and go to its folder:
 
    ```bash
-   git clone https://github.com/OWNER/obsidian-remote-mcp.git
+   git clone https://github.com/HGWingless/obsidian-remote-mcp.git
    cd obsidian-remote-mcp
    ```
-
-   Replace `OWNER` with the GitHub account that hosts the repository.
 
 1. Create your settings file from the example:
 
@@ -114,10 +112,7 @@ In this setup, the `ob-sync` container signs in to your Obsidian account and kee
    - `VAULT_NAME`: the name of your vault, from the previous step.
    - `DEVICE_NAME`: a name for this machine, such as `mcp-server`. It appears in Obsidian Sync version history.
 
-   If your vault uses end-to-end encryption, the command asks for the encryption password.
-
-   > [!CAUTION]
-   > Don't add `--password` to this command. A password on the command line is saved in your shell history.
+   If your vault uses end-to-end encryption, the command asks for the encryption password. Type it when asked. **Don't** add `--password` to the command, because a password on the command line is saved in your shell history.
 
 1. Set the sync options. This command downloads only, never syncs Obsidian settings, and merges conflicting edits:
 
@@ -134,8 +129,7 @@ In this setup, the `ob-sync` container signs in to your Obsidian account and kee
    scripts/notes-only.sh
    ```
 
-   > [!WARNING]
-   > Don't use `ob sync-config --file-types ""` for this. It turns on all attachment types instead. For details, see [Troubleshooting](troubleshooting.md#the-server-downloads-attachments-that-you-turned-off).
+   **Don't** use `ob sync-config --file-types ""` for this, because it turns on all attachment types instead. For details, see [Troubleshooting](troubleshooting.md#the-server-downloads-attachments-that-you-turned-off).
 
 1. Download your vault once, then check the result:
 
