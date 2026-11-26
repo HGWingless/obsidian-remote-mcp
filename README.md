@@ -13,6 +13,14 @@ Use your Obsidian vault from Claude and other AI apps, from anywhere. obsidian-r
 - **Your choice of where the vault comes from.** Serve a vault folder that's already on the machine, or keep a copy in step with Obsidian Sync.
 - **Optional safety modes.** Limit clients to read-only access, or let them write to one folder only.
 
+## Requirements
+
+- A computer or server that runs Docker with Docker Compose. Linux, macOS, Windows, cloud servers, and some NAS devices work. See [Where it runs](docs/platforms.md).
+- A domain name that uses Cloudflare DNS.
+- A free [Cloudflare Zero Trust](https://www.cloudflare.com/zero-trust/products/access/) account.
+- An MCP client that can connect to a remote server and sign in with OAuth, such as Claude. See [Compatible MCP clients](docs/clients.md).
+- For the Obsidian Sync setup only: an [Obsidian Sync](https://obsidian.md/sync) subscription.
+
 ## How it works
 
 ```mermaid
@@ -39,21 +47,37 @@ The project is a Docker Compose file that connects existing open-source tools:
 
 ## Choose a setup
 
+obsidian-remote-mcp works with any Obsidian vault: a standalone vault that's just a folder of files, or a vault that uses Obsidian Sync. You pick one of two setups, based on where your vault lives and where the server runs. You make the choice once, in your `.env` file, and you can change it later.
+
+### Local folder setup: a standalone vault
+
+The server reads and writes a vault folder that's already on the machine. Obsidian doesn't need to know about the server, and you don't need an Obsidian Sync subscription.
+
+Choose this setup in these cases:
+
+- **Docker runs on the computer that has your vault.** The server and the Obsidian app work on the same files. If that vault also uses Obsidian Sync, the Obsidian app syncs the server's changes to your other devices, as long as Obsidian is open.
+- **Your vault isn't synced, or another tool syncs it.** For example, iCloud Drive, Dropbox, Syncthing, or Git keeps a copy of the vault on the server. Point the server at that copy.
+
+The server is reachable only while that machine is on and awake.
+
+### Obsidian Sync setup: a vault that uses Obsidian Sync
+
+The server keeps its own copy of your vault with the official Obsidian Sync client, and shows up as one more device in Obsidian Sync. Changes that an AI app makes reach your phone and computers through Obsidian Sync, and your own edits reach the server the same way.
+
+Choose this setup when the server runs somewhere other than your main computer, such as a cloud server, a NAS, or a Raspberry Pi. Your vault stays reachable even when your computers are off.
+
+This setup needs an Obsidian Sync subscription.
+
+### Compare the setups
+
 | | Local folder | Obsidian Sync |
 |---|---|---|
-| **Use it when** | Docker runs on the computer that already has your vault, or another tool (such as Syncthing, Git, or Dropbox) copies your vault to the server. | The server is somewhere else, such as a cloud server, a NAS, or a Raspberry Pi, and you use Obsidian Sync. |
+| **Vault** | A folder already on the machine | A copy that Obsidian Sync keeps up to date |
 | **Needs Obsidian Sync** | No | Yes |
-| **Works while your main computer is off** | No, unless the server is a different machine | Yes, if the server stays on |
+| **Works while your main computer is off** | Only if the server is a different, always-on machine | Yes, if the server stays on |
+| **Turn it on** | Leave `COMPOSE_PROFILES` empty in `.env` (the default) | Set `COMPOSE_PROFILES=obsidian-sync` in `.env` |
 
-Both setups use the same Cloudflare steps and the same MCP server.
-
-## Requirements
-
-- A computer or server that runs Docker with Docker Compose. Linux, macOS, Windows, cloud servers, and some NAS devices work. See [Where it runs](docs/platforms.md).
-- A domain name that uses Cloudflare DNS.
-- A free [Cloudflare Zero Trust](https://www.cloudflare.com/zero-trust/products/access/) account.
-- An MCP client that can connect to a remote server and sign in with OAuth, such as Claude. See [Compatible MCP clients](docs/clients.md).
-- For the Obsidian Sync setup only: an [Obsidian Sync](https://obsidian.md/sync) subscription.
+Both setups use the same Cloudflare steps, the same MCP server, and the same safety modes.
 
 ## Quick start
 
